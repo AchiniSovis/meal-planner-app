@@ -1,27 +1,31 @@
-const express = require('express');
-const mongoose = require('mongoose');
-const cors = require('cors');
-require('dotenv').config();
+const express = require("express");
+const mongoose = require("mongoose");
+const cors = require("cors");
+const ingredientRoutes = require("./routes/ingredientRoutes");
+require("dotenv").config();
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 
-app.get('/', (req, res) => {
-  res.send('Meal Planner API Running');
+app.use("/api/ingredients", ingredientRoutes);
+
+app.get("/", (req, res) => {
+  res.send("Meal Planner API Running");
 });
 
 const PORT = process.env.PORT || 5000;
 
-mongoose.connect(process.env.MONGO_URI)
-.then(() => {
-  console.log('✅ MongoDB Connected');
+mongoose
+  .connect(process.env.MONGO_URI)
+  .then(() => {
+    console.log("✅ MongoDB Connected");
 
-  app.listen(PORT, () => {
-    console.log(`🚀 Server running on port ${PORT}`);
+    app.listen(PORT, () => {
+      console.log(`🚀 Server running on port ${PORT}`);
+    });
+  })
+  .catch((err) => {
+    console.log(err);
   });
-})
-.catch((err) => {
-  console.log(err);
-});
