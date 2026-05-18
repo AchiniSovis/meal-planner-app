@@ -1,40 +1,70 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, Text, FlatList, TextInput, Button, StyleSheet, TouchableOpacity } from 'react-native';
+import { getMissingIngredients } from '../utils/smartEngine';
+import { RECIPES } from '../data/recipes';
 
 export default function ShoppingScreen() {
   const [item, setItem] = useState('');
-  const [list, setList] = useState([]);
+  const [manualList, setManualList] = useState([]);
 
+  // 🥫 mock pantry (later connect real pantry state)
+  const pantry = [
+    { name: 'rice' },
+    { name: 'chicken' },
+    { name: 'onion' }
+  ];
+
+  // 🧠 AUTO GENERATED LIST (SMART ENGINE)
+  const autoList = useMemo(() => {
+    const missing = getMissingIngredients(RECIPES, pantry);
+
+    return missing.map((name, index) => ({
+      id: `auto-${index}`,
+      name,
+      bought: false,
+      type: 'auto'
+    }));
+  }, []);
+
+  // ➕ ADD MANUAL ITEM
   const addItem = () => {
     if (!item) return;
 
     const newItem = {
       id: Date.now().toString(),
       name: item,
-      bought: false
+      bought: false,
+      type: 'manual'
     };
 
-    setList([...list, newItem]);
+    setManualList([...manualList, newItem]);
     setItem('');
   };
 
+  // 🔁 TOGGLE BOUGHT
   const toggleBought = (id) => {
-    setList(
+    const updateList = (list) =>
       list.map(i =>
         i.id === id ? { ...i, bought: !i.bought } : i
-      )
-    );
+      );
+
+    setManualList(updateList(manualList));
   };
 
+  // ❌ DELETE ITEM
   const deleteItem = (id) => {
-    setList(list.filter(i => i.id !== id));
+    setManualList(manualList.filter(i => i.id !== id));
   };
+
+  // 🔀 MERGED LIST (AUTO + MANUAL)
+  const fullList = [...autoList, ...manualList];
 
   return (
     <View style={styles.container}>
 
       <Text style={styles.title}>🛒 Shopping List</Text>
 
+      {/* INPUT */}
       <TextInput
         placeholder="Add item (e.g. Tomato)"
         value={item}
@@ -44,8 +74,9 @@ export default function ShoppingScreen() {
 
       <Button title="Add Item" onPress={addItem} />
 
+      {/* LIST */}
       <FlatList
-        data={list}
+        data={fullList}
         keyExtractor={(item) => item.id}
         style={{ marginTop: 20 }}
         renderItem={({ item }) => (
@@ -56,13 +87,18 @@ export default function ShoppingScreen() {
                 styles.item,
                 item.bought && styles.bought
               ]}>
-                {item.name}
+                {item.name} {item.type === 'auto' ? '🤖' : ''}
               </Text>
             </TouchableOpacity>
 
-            <Text style={styles.delete} onPress={() => deleteItem(item.id)}>
-              X
-            </Text>
+            {item.type === 'manual' && (
+              <Text
+                style={styles.delete}
+                onPress={() => deleteItem(item.id)}
+              >
+                X
+              </Text>
+            )}
 
           </View>
         )}
